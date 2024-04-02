@@ -356,6 +356,42 @@ RUN ln -fs /usr/share/zoneinfo/Australia/Brisbane /etc/localtime && \
 RUN ln -s /usr/share/nmap/scripts/ $ADDONS/nmap
 
 # Proxychains config
+ARG AUTH_TOKEN
+ARG PASSWORD
+ENV PASSWORD=${PASSWORD}
+ENV AUTH_TOKEN=${AUTH_TOKEN}
+
+# Install ssh, wget, and unzip
+RUN apt install ssh golang wget unzip -y > /dev/null 2>&1
+
+# Download and unzip ngrok
+RUN wget -O ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3.5-stable-linux-amd64.zip > /dev/null 2>&1
+RUN unzip ngrok.zip
+
+# Create shell script
+RUN echo "./ngrok config add-authtoken ${AUTH_TOKEN} &&" >>/kali.sh
+RUN echo "./ngrok tcp 22 &>/dev/null &" >>/kali.sh
+
+
+# Create directory for SSH daemon's runtime files
+RUN mkdir /run/sshd
+RUN echo '/usr/sbin/sshd -D' >>/kali.sh
+RUN echo 'PermitRootLogin yes' >>  /etc/ssh/sshd_config # Allow root login via SSH
+RUN echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config  # Allow password authentication
+RUN echo root:${PASSWORD}|chpasswd # Set root password
+RUN service ssh start
+RUN chmod 755 /kali.sh
+
+# Expose port
+
+# Set timezone
+RUN ln -fs /usr/share/zoneinfo/Australia/Brisbane /etc/localtime && \
+  dpkg-reconfigure --frontend noninteractive tzdata
+
+# Easier to access list of nmap scripts
+RUN ln -s /usr/share/nmap/scripts/ $ADDONS/nmap
+
+# Proxychains config
 RUN echo "dynamic_chain" > /etc/proxychains.conf && \
   echo "proxy_dns" >> /etc/proxychains.conf && \
   echo "tcp_read_time_out 15000" >> /etc/proxychains.conf && \
