@@ -1,4 +1,4 @@
-FROM ubuntu:mantic
+FROM ubuntu:23.10
 
 LABEL maintainer="Matt McNamee"
 
