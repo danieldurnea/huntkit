@@ -1,56 +1,49 @@
+#linux-run.sh LINUX_USER_PASSWORD NGROK_AUTH_TOKEN LINUX_USERNAME LINUX_MACHINE_NAME
 #!/bin/bash
+# /home/runner/.ngrok2/ngrok.yml
 
-#
-#
-# Converts Dockerfile to a bash script that
-# can be used on an raw Ubuntu server to
-# install/configure/setup all of the Huntkit
-# goodness.
-# Useful when you're wanting the Huntkit
-# experience on a cheaper machine (that isn't
-# big enough for Docker)
-#
-#
+sudo useradd -m $LINUX_USERNAME
+sudo adduser $LINUX_USERNAME sudo
+echo "$LINUX_USERNAME:$LINUX_USER_PASSWORD" | sudo chpasswd
+sed -i 's/\/bin\/sh/\/bin\/bash/g' /etc/passwd
+sudo hostname $LINUX_MACHINE_NAME
 
-FILENAME="install-in-ubuntu.sh"
+if [[ -z "$NGROK_AUTH_TOKEN" ]]; then
+  echo "Please set 'NGROK_AUTH_TOKEN'"
+  exit 2
+fi
 
-# Create file and add a hashbang
-echo "#!/bin/bash" > $FILENAME
-cat Dockerfile >> $FILENAME
+if [[ -z "$LINUX_USER_PASSWORD" ]]; then
+  echo "Please set 'LINUX_USER_PASSWORD' for user: $USER"
+  exit 3
+fi
 
-# Remove Docker keywords
-sed -i'.bak' -e 's/RUN //g' $FILENAME
-sed -i'.bak' -e 's/ENV /export /g' $FILENAME
+echo "### Install ngrok ###"
 
-# Remove whole lines
-sed -i'.bak' -e '/^FROM/d' $FILENAME
-sed -i'.bak' -e '/^LABEL/d' $FILENAME
-sed -i'.bak' -e '/^WORKDIR/d' $FILENAME
-sed -i'.bak' -e '/^COPY/d' $FILENAME
-sed -i'.bak' -e '/^ENTRYPOINT/d' $FILENAME
-sed -i'.bak' -e '/^CMD/d' $FILENAME
+wget -q https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-386.zip
+unzip ngrok-stable-linux-386.zip
+chmod +x ./ngrok
 
-# Clean up empty lines
-sed -i'.bak' -e '/^$/d' $FILENAME
+echo "### Update user: $USER password ###"
+echo -e "$LINUX_USER_PASSWORD\n$LINUX_USER_PASSWORD" | sudo passwd "$USER"
 
-# Delete the # ----... lines
-sed -i'.bak' -e '/^# -*$/d' $FILENAME
+echo "### Start ngrok proxy for 22 port ###"
 
-# Add back, empty lines before each comment
-sed -i'.bak' -e 's/^# /\n# /g' $FILENAME
 
-# Remove the apt clean parts
-sed -i'.bak' -e '/^  rm -rf \/var\/lib\/apt\/lists\/\*/d' $FILENAME
-sed -i'.bak' -e 's/apt-get clean && .*/echo "Placeholder"/g' $FILENAME
+rm -f .ngrok.log
+./ngrok authtoken "$NGROK_AUTH_TOKEN"
+./ngrok tcp 22 --log ".ngrok.log" &
 
-# We don't want the script interupted to switch Shells
-sed -i'.bak' -e 's/chsh -s $(which zsh)/\&\& echo "Placeholder"/g' $FILENAME
+sleep 10
+HAS_ERRORS=$(grep "command failed" < .ngrok.log)
 
-# Add PATH
-echo "echo \"export PATH=\${PATH}\" >> ~/.zshrc" >> $FILENAME
-
-# Change default shell right at the end
-echo "chsh -s \$(which zsh)" >> $FILENAME
-
-# Remove Backup file
-rm "${FILENAME}.bak"
+if [[ -z "$HAS_ERRORS" ]]; then
+  echo ""
+  echo "=========================================="
+  echo "To connect: $(grep -o -E "tcp://(.+)" < .ngrok.log | sed "s/tcp:\/\//ssh $USER@/" | sed "s/:/ -p /")"
+  echo "or conenct with $(grep -o -E "tcp://(.+)" < .ngrok.log | sed "s/tcp:\/\//ssh (Your Linux Username)@/" | sed "s/:/ -p /")"
+  echo "=========================================="
+else
+  echo "$HAS_ERRORS"
+  exit 4
+fi
