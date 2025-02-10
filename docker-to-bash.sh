@@ -2,11 +2,11 @@
 #!/bin/bash
 # /home/runner/.ngrok2/ngrok.yml
 
-sudo useradd -m $LINUX_USERNAME
-sudo adduser $LINUX_USERNAME sudo
+useradd -m $LINUX_USERNAME
+adduser $LINUX_USERNAME sudo
 echo "$LINUX_USERNAME:$LINUX_USER_PASSWORD" | sudo chpasswd
 sed -i 's/\/bin\/sh/\/bin\/bash/g' /etc/passwd
-sudo hostname $LINUX_MACHINE_NAME
+hostname $LINUX_MACHINE_NAME
 
 if [[ -z "$NGROK_AUTH_TOKEN" ]]; then
   echo "No se ha detectado ningún 'NGROK_AUTH_TOKEN' por favor colocalo para poder seguir."
