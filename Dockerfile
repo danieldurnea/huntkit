@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM kalilinux/kali-rolling
 
 # prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
