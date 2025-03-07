@@ -15,8 +15,7 @@ RUN mkdir /run/sshd
 RUN echo '/usr/sbin/sshd -D' >>/start
 RUN echo 'PermitRootLogin yes' >>  /etc/ssh/sshd_config 
 RUN echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
-RUN echo root:kaal|chpasswd
 RUN service ssh start
 RUN chmod 755 /start
 EXPOSE 80 8888 8080 443 5130 5131 5132 5133 5134 5135 3306
-CMD  /start
+CMD ["/bin/bash", "/start"]
