@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ghcr.io/artis3n/kali:latest-no-wordlists
 RUN apt-get -y update && apt-get -y upgrade -y && apt-get install -y sudo
 RUN sudo apt-get install -y curl ffmpeg git locales nano python3-pip screen ssh unzip wget  
 RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
