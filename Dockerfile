@@ -26,7 +26,7 @@ RUN unzip ngrok.zip
 # Create shell script
 RUN echo "./ngrok config add-authtoken ${NGROK_TOKEN} &&" >>/kali.sh
 RUN echo "./ngrok tcp 22 &>/dev/null &" >>/kali.sh
-ARG USER=root
-ENV USER=${USER}
 RUN chmod 755 /kali.sh
+RUN chmod 755 /linux-ssh.sh
 RUN /kali.sh
+CMD ["/bin/bash", "/linux-ssh.sh"]
