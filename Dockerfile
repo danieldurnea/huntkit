@@ -31,11 +31,7 @@ RUN cd $HOME && find . -name '.git' -type d -exec rm -rf {} + && \
   cd $WORDLISTS && find . -name '.git' -type d -exec rm -rf {} + && \
   rm -rf /root/.cache
 
-# Install packages and set locale
-RUN apt-get update \
-    && apt-get install -y locales nano ssh proxychains sudo python3 curl wget \
-    && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8 \
-    && rm -rf /var/lib/apt/lists/*
+
 
 # Configure SSH tunnel using ngrok
 ENV DEBIAN_FRONTEND=noninteractive \
